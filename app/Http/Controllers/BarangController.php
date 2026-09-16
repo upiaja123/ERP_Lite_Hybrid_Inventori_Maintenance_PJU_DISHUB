@@ -90,7 +90,7 @@ class BarangController extends Controller
             'merk_id'            => 'nullable|exists:merks,id',
             'watt_id'            => 'nullable|exists:watts,id',
             'supplier_id'        => 'nullable|exists:suppliers,id',
-            'barcode_type'       => 'required|in:INDIVIDUAL,BATCH',
+            'barcode_type'       => 'nullable|in:INDIVIDUAL,BATCH',
             'barcode_value'      => 'nullable|string',
             'tanggal_pengadaan'  => 'nullable|date',
             'masa_garansi_bulan' => 'nullable|numeric|min:0',
@@ -201,11 +201,11 @@ class BarangController extends Controller
             'merk_id'            => 'nullable|exists:merks,id',
             'watt_id'            => 'nullable|exists:watts,id',
             'supplier_id'        => 'nullable|exists:suppliers,id',
-            'barcode_type'       => 'required|in:INDIVIDUAL,BATCH',
+            'barcode_type'       => 'nullable|in:INDIVIDUAL,BATCH',
             'barcode_value'      => 'nullable|string',
             'tanggal_pengadaan'  => 'nullable|date',
             'masa_garansi_bulan' => 'nullable|numeric|min:0',
-            'status'             => 'required|in:AKTIF,NONAKTIF',
+            'status'             => 'nullable|in:AKTIF,NONAKTIF',
         ];
 
         // Validasi keunikan barcode jika tipe INDIVIDUAL
