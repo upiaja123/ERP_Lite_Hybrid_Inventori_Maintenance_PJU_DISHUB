@@ -198,6 +198,39 @@
               @endif
             @endif
 
+            <!-- DEPARTMENT MANAGER: DATA TRANSPARANSI & LAPORAN (tidak ada CRUD fisik gudang) -->
+            @if (auth()->user()->hasRole('department manager'))
+              <li class="menu-header">MANAJEMEN & LAPORAN</li>
+              <li class="{{ Request::is('barang*') ? 'active' : '' }}">
+                <a class="nav-link" href="/barang"><i class="fas fa-cubes text-info"></i><span>Data Barang & Stok</span></a>
+              </li>
+              <li class="{{ Request::is('pju-asset*') ? 'active' : '' }}">
+                <a class="nav-link" href="/pju-asset"><i class="fas fa-lightbulb text-warning"></i><span>Aset PJU</span></a>
+              </li>
+              <li class="{{ Request::is('maintenance-pju*') ? 'active' : '' }}">
+                <a class="nav-link" href="/maintenance-pju"><i class="fas fa-wrench text-success"></i><span>Maintenance</span></a>
+              </li>
+              <li class="{{ Request::is('barang-masuk*') ? 'active' : '' }}">
+                <a class="nav-link" href="/barang-masuk"><i class="fas fa-arrow-right text-success"></i><span>Barang Masuk</span></a>
+              </li>
+              <li class="{{ Request::is('barang-keluar*') ? 'active' : '' }}">
+                <a class="nav-link" href="/barang-keluar"><i class="fas fa-arrow-left text-danger"></i><span>Barang Keluar</span></a>
+              </li>
+              <li class="menu-header">LAPORAN PIMPINAN</li>
+              <li class="{{ Request::is('laporan-stok*') ? 'active' : '' }}">
+                <a class="nav-link" href="/laporan-stok"><i class="fas fa-file-alt"></i><span>Laporan Stok</span></a>
+              </li>
+              <li class="{{ Request::is('laporan-barang-masuk*') ? 'active' : '' }}">
+                <a class="nav-link" href="/laporan-barang-masuk"><i class="fas fa-file-import"></i><span>Laporan Masuk</span></a>
+              </li>
+              <li class="{{ Request::is('laporan-barang-keluar*') ? 'active' : '' }}">
+                <a class="nav-link" href="/laporan-barang-keluar"><i class="fas fa-file-export"></i><span>Laporan Keluar</span></a>
+              </li>
+              <li class="{{ Request::is('laporan/generate*') ? 'active' : '' }}">
+                <a class="nav-link" href="/laporan/generate"><i class="fas fa-chart-line"></i><span>Laporan Terpadu</span></a>
+              </li>
+            @endif
+
             <!-- VIEWER TRANSPARANSI MONITORING (VIEWER ROLE) -->
             @if (auth()->user()->hasRole('viewer'))
               <li class="menu-header">TRANSPARANSI DATA</li>
@@ -212,8 +245,8 @@
               </li>
             @endif
 
-            <!-- LAPORAN & PELAPORAN (SUPERADMIN, ADMIN GUDANG, KEPALA GUDANG, VIEWER) -->
-            @if (auth()->user()->isSuperAdmin() || auth()->user()->hasRole(['admin gudang', 'kepala gudang', 'viewer']))
+            <!-- LAPORAN & PELAPORAN (SUPERADMIN, ADMIN GUDANG, KEPALA GUDANG, VIEWER, DEPARTMENT MANAGER) -->
+            @if (auth()->user()->isSuperAdmin() || auth()->user()->hasRole(['admin gudang', 'kepala gudang', 'viewer', 'department manager']))
               <li class="menu-header">LAPORAN</li>
               <li class="{{ Request::is('laporan-stok*') ? 'active' : '' }}">
                 <a class="nav-link" href="/laporan-stok"><i class="fas fa-file-alt"></i><span>Laporan Stok</span></a>

@@ -17,9 +17,9 @@ class CheckRole
     {
         $user = auth()->user();
 
-        // Jika user belum login, biarkan sistem yang handle (mungkin dilempar ke login)
+        // Jika user belum login, redirect ke halaman login
         if (!$user) {
-            return $next($request);
+            return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
         }
 
         // Cek apakah user aktif

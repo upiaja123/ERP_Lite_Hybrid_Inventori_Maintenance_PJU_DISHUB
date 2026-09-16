@@ -25,7 +25,7 @@
                      multiple
                      class="form-control"
                      accept="image/*"
-                     onchange="previewImageEdit()">
+                     onchange="previewImageEdit(this)">
 
               <small class="text-muted">Kosongkan jika tidak ingin mengganti gambar</small>
 

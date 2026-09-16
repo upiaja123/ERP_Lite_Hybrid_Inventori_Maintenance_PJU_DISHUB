@@ -228,8 +228,8 @@ $(document).ready(function() {
                     .text('Tambah');
 
                 // ================= RELOAD DATA =================
-                if ($.fn.DataTable.isDataTable('#table_id')) {
-                    $('#table_id').DataTable().ajax.reload(null, false);
+                if (typeof loadData === 'function') {
+                    loadData();
                 } else {
                     location.reload();
                 }
@@ -638,17 +638,36 @@ $('body').on('click', '#button_hapus_barang', function () {
 
     <!-- Preview Image -->
     <script>
-        function previewImage() {
-    let preview = document.getElementById('preview');
-    preview.src = URL.createObjectURL(event.target.files[0]);
-}
+        function previewImage(input) {
+            let preview = document.getElementById('preview');
+            if (input.files && input.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('d-none');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
     </script>
 
     <script>
-        function previewImageEdit() {
-    let preview = document.getElementById('edit_gambar_preview');
-    preview.src = URL.createObjectURL(event.target.files[0]);
-}
+        function previewImageEdit(input) {
+            let preview = document.getElementById('edit_gambar_preview');
+            if (input && input.files && input.files.length > 0) {
+                preview.innerHTML = '';
+                for (let i = 0; i < input.files.length; i++) {
+                    let reader = new FileReader();
+                    reader.onload = function(e) {
+                        let img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:6px;margin:4px;border:1px solid #ddd;';
+                        preview.appendChild(img);
+                    };
+                    reader.readAsDataURL(input.files[i]);
+                }
+            }
+        }
     </script>
 
     <script>

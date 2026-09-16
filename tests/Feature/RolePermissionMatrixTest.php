@@ -332,4 +332,76 @@ class RolePermissionMatrixTest extends TestCase
         // Kepala Gudang ALLOWED (200)
         $this->actingAs($this->kepalaGudang)->postJson("/retur-vendor/{$retur->id}/complete", $completePayload)->assertStatus(200);
     }
+
+    /**
+     * TEST: Department Manager Access Rights
+     */
+    public function test_department_manager_can_access_dashboard_and_reports(): void
+    {
+        $roleDeptManager = Role::firstOrCreate(['role' => 'department manager']);
+
+        $deptManager = User::firstOrCreate(
+            ['email' => 'matrix_deptmgr@test.com'],
+            ['name' => 'Dept Manager Matrix', 'password' => bcrypt('password'), 'role_id' => $roleDeptManager->id, 'status' => 'ACTIVE']
+        );
+        $deptManager->roles()->syncWithoutDetaching([$roleDeptManager->id]);
+
+        // Dashboard: ALLOWED
+        $this->actingAs($deptManager)->get('/')->assertStatus(200);
+        $this->actingAs($deptManager)->get('/dashboard')->assertStatus(200);
+
+        // Reports: ALLOWED
+        $this->actingAs($deptManager)->get('/laporan-stok')->assertStatus(200);
+        $this->actingAs($deptManager)->get('/laporan-barang-masuk')->assertStatus(200);
+        $this->actingAs($deptManager)->get('/laporan-barang-keluar')->assertStatus(200);
+
+        // Inventory Read: ALLOWED
+        $this->actingAs($deptManager)->get('/barang')->assertStatus(200);
+        $this->actingAs($deptManager)->get('/pju-asset')->assertStatus(200);
+        $this->actingAs($deptManager)->get('/maintenance-pju')->assertStatus(200);
+        $this->actingAs($deptManager)->get('/barang-masuk')->assertStatus(200);
+        $this->actingAs($deptManager)->get('/barang-keluar')->assertStatus(200);
+
+        // User Management: DENIED
+        $this->actingAs($deptManager)->get('/data-pengguna')->assertStatus(403);
+
+        // Master Data Write (Barang Store): DENIED
+        $this->actingAs($deptManager)->postJson('/barang', [
+            'nama_barang'   => 'Test',
+            'deskripsi'     => 'Test',
+            'stok_minimum'  => 5,
+            'jenis_id'      => 1,
+            'satuan_id'     => 1,
+            'barcode_type'  => 'BATCH',
+        ])->assertStatus(403);
+
+        // Barang Masuk Write: DENIED
+        $this->actingAs($deptManager)->postJson('/barang-masuk', [
+            'tanggal_masuk' => now()->format('Y-m-d'),
+            'barang_id'     => 1,
+            'jumlah_masuk'  => 10,
+            'supplier_id'   => 1,
+        ])->assertStatus(403);
+
+        // Maintenance Create: DENIED
+        $this->actingAs($deptManager)->postJson('/maintenance-pju', [
+            'pju_asset_id'      => 1,
+            'jenis_maintenance' => 'KOREKTIF',
+            'tanggal_mulai'     => now()->format('Y-m-d'),
+        ])->assertStatus(403);
+    }
+
+    /**
+     * TEST: Debug routes are secured (not publicly accessible)
+     */
+    public function test_debug_routes_require_superadmin_auth(): void
+    {
+        // Unauthenticated: should redirect to login
+        $this->get('/fix-password')->assertRedirect('/login');
+        $this->get('/patch-db')->assertRedirect('/login');
+
+        // Authenticated non-superadmin (teknisi): should get 403
+        $this->actingAs($this->teknisi)->get('/fix-password')->assertStatus(403);
+        $this->actingAs($this->viewer)->get('/fix-password')->assertStatus(403);
+    }
 }

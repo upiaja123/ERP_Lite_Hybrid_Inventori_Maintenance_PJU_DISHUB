@@ -17,7 +17,7 @@
             <div class="col-md-6">
               <div class="form-group">
                 <label style="font-weight:300;">Gambar</label>
-                <input type="file" class="form-control form-control-sm" name="gambar[]" id="gambar" multiple onchange="previewImage()" accept="image/*">
+                <input type="file" class="form-control form-control-sm" name="gambar[]" id="gambar" multiple onchange="previewImage(this)" accept="image/*">
                 <img src="" id="preview" class="img-fluid mt-3 d-none rounded" style="max-height:260px; border:1px solid #e0e0e0; object-fit:cover;">
                 <div class="alert alert-danger mt-2 d-none" id="alert-gambar" style="font-size:13px;"></div>
               </div>

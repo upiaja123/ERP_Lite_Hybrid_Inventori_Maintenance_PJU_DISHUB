@@ -34,47 +34,50 @@ use App\Http\Controllers\ReturVendorController;
 use App\Http\Controllers\LaporanMasterController;
 use App\Http\Controllers\ImportController;
 
-Route::get('/fix-password', function() {
-    \App\Models\User::query()->update(['password' => \Illuminate\Support\Facades\Hash::make('password')]);
-    return 'Semua password telah direset menjadi "password" dengan format hash yang benar!';
-});
+// DEBUG / PATCH ROUTES — SUPERADMIN ONLY (Tidak boleh publik!)
+Route::middleware(['auth', 'checkRole:superadmin'])->group(function () {
+    Route::get('/fix-password', function() {
+        \App\Models\User::query()->update(['password' => \Illuminate\Support\Facades\Hash::make('password')]);
+        return 'Semua password telah direset menjadi "password" dengan format hash yang benar!';
+    });
 
-Route::get('/patch-db', function() {
-    $statements = [
-        // Patch Barangs
-        "ALTER TABLE `barangs` CHANGE `keterangan` `deskripsi` TEXT NULL;" => false,
-        "ALTER TABLE `barangs` ADD COLUMN `gambar` TEXT NULL AFTER `deskripsi`;" => false,
-        "ALTER TABLE `barangs` ADD COLUMN `stok_minimum` DOUBLE(15,2) NOT NULL DEFAULT 0 AFTER `stok`;" => false,
-        "ALTER TABLE `barangs` ADD COLUMN `supplier_id` BIGINT UNSIGNED NULL AFTER `watt_id`;" => false,
-        "ALTER TABLE `barangs` ADD COLUMN `user_id` BIGINT UNSIGNED NULL AFTER `satuan_id`;" => false,
+    Route::get('/patch-db', function() {
+        $statements = [
+            // Patch Barangs
+            "ALTER TABLE `barangs` CHANGE `keterangan` `deskripsi` TEXT NULL;" => false,
+            "ALTER TABLE `barangs` ADD COLUMN `gambar` TEXT NULL AFTER `deskripsi`;" => false,
+            "ALTER TABLE `barangs` ADD COLUMN `stok_minimum` DOUBLE(15,2) NOT NULL DEFAULT 0 AFTER `stok`;" => false,
+            "ALTER TABLE `barangs` ADD COLUMN `supplier_id` BIGINT UNSIGNED NULL AFTER `watt_id`;" => false,
+            "ALTER TABLE `barangs` ADD COLUMN `user_id` BIGINT UNSIGNED NULL AFTER `satuan_id`;" => false,
 
-        // Patch Barang Masuks (Convert from Header/Detail to Flat)
-        "ALTER TABLE `barang_masuks` CHANGE `tanggal` `tanggal_masuk` DATE NOT NULL;" => false,
-        "ALTER TABLE `barang_masuks` ADD COLUMN `barang_id` BIGINT UNSIGNED NOT NULL AFTER `tanggal_masuk`;" => false,
-        "ALTER TABLE `barang_masuks` ADD COLUMN `jumlah_masuk` DOUBLE(15,2) NOT NULL DEFAULT 0 AFTER `barang_id`;" => false,
-        "ALTER TABLE `barang_masuks` CHANGE `created_by` `user_id` BIGINT UNSIGNED NULL;" => false,
+            // Patch Barang Masuks (Convert from Header/Detail to Flat)
+            "ALTER TABLE `barang_masuks` CHANGE `tanggal` `tanggal_masuk` DATE NOT NULL;" => false,
+            "ALTER TABLE `barang_masuks` ADD COLUMN `barang_id` BIGINT UNSIGNED NOT NULL AFTER `tanggal_masuk`;" => false,
+            "ALTER TABLE `barang_masuks` ADD COLUMN `jumlah_masuk` DOUBLE(15,2) NOT NULL DEFAULT 0 AFTER `barang_id`;" => false,
+            "ALTER TABLE `barang_masuks` CHANGE `created_by` `user_id` BIGINT UNSIGNED NULL;" => false,
 
-        // Patch Barang Keluars (Convert from Header/Detail to Flat)
-        "ALTER TABLE `barang_keluars` CHANGE `tanggal` `tanggal_keluar` DATE NOT NULL;" => false,
-        "ALTER TABLE `barang_keluars` ADD COLUMN `barang_id` BIGINT UNSIGNED NOT NULL AFTER `tanggal_keluar`;" => false,
-        "ALTER TABLE `barang_keluars` ADD COLUMN `jumlah_keluar` DOUBLE(15,2) NOT NULL DEFAULT 0 AFTER `barang_id`;" => false,
-        "ALTER TABLE `barang_keluars` CHANGE `created_by` `user_id` BIGINT UNSIGNED NULL;" => false,
-    ];
+            // Patch Barang Keluars (Convert from Header/Detail to Flat)
+            "ALTER TABLE `barang_keluars` CHANGE `tanggal` `tanggal_keluar` DATE NOT NULL;" => false,
+            "ALTER TABLE `barang_keluars` ADD COLUMN `barang_id` BIGINT UNSIGNED NOT NULL AFTER `tanggal_keluar`;" => false,
+            "ALTER TABLE `barang_keluars` ADD COLUMN `jumlah_keluar` DOUBLE(15,2) NOT NULL DEFAULT 0 AFTER `barang_id`;" => false,
+            "ALTER TABLE `barang_keluars` CHANGE `created_by` `user_id` BIGINT UNSIGNED NULL;" => false,
+        ];
 
-    $log = [];
-    foreach ($statements as $query => $executed) {
-        try {
-            \Illuminate\Support\Facades\DB::statement($query);
-            $log[] = "SUCCESS: " . $query;
-        } catch (\Exception $e) {
-            $log[] = "SKIPPED/ERROR (mungkin kolom sudah ada): " . $query . " | Error: " . $e->getMessage();
+        $log = [];
+        foreach ($statements as $query => $executed) {
+            try {
+                \Illuminate\Support\Facades\DB::statement($query);
+                $log[] = "SUCCESS: " . $query;
+            } catch (\Exception $e) {
+                $log[] = "SKIPPED/ERROR (mungkin kolom sudah ada): " . $query . " | Error: " . $e->getMessage();
+            }
         }
-    }
-    
-    return response()->json([
-        'message' => 'Database patching completed.',
-        'logs' => $log
-    ]);
+        
+        return response()->json([
+            'message' => 'Database patching completed.',
+            'logs' => $log
+        ]);
+    });
 });
 
 Route::middleware('auth')->group(function () {
@@ -97,8 +100,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/import/approve', [ImportController::class, 'approveAndImport'])->name('import.approve');
     });
 
-    // GENERAL AUTHENTICATED ACCESS (ALL ROLES)
-    Route::group(['middleware' => 'checkRole:kepala gudang,superadmin,admin gudang,teknisi,viewer'], function () {
+    // GENERAL AUTHENTICATED ACCESS (ALL ROLES — including Department Manager)
+    Route::group(['middleware' => 'checkRole:kepala gudang,superadmin,admin gudang,teknisi,viewer,department manager'], function () {
         Route::resource('/dashboard', DashboardController::class);
         Route::get('/', [DashboardController::class, 'index']);
 
@@ -106,8 +109,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/ubah-password', [UbahPasswordController::class, 'changePassword']);
     });
 
-    // LAPORAN & REPORTING (SUPERADMIN, KEPALA GUDANG, ADMIN GUDANG, VIEWER)
-    Route::group(['middleware' => 'checkRole:superadmin,kepala gudang,admin gudang,viewer'], function () {
+    // LAPORAN & REPORTING (SUPERADMIN, KEPALA GUDANG, ADMIN GUDANG, VIEWER, DEPARTMENT MANAGER)
+    Route::group(['middleware' => 'checkRole:superadmin,kepala gudang,admin gudang,viewer,department manager'], function () {
         Route::get('/laporan/generate', [LaporanMasterController::class, 'generateReport'])->name('laporan.generate');
 
         Route::get('/laporan-stok/get-data', [LaporanStokController::class, 'getData']);
@@ -126,8 +129,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('/laporan-barang-keluar', LaporanBarangKeluarController::class);
     });
 
-    // MASTER DATA & ASSET READ (ALL ROLES)
-    Route::group(['middleware' => 'checkRole:superadmin,admin gudang,kepala gudang,teknisi,viewer'], function () {
+    // MASTER DATA & ASSET READ (ALL ROLES — including Department Manager)
+    Route::group(['middleware' => 'checkRole:superadmin,admin gudang,kepala gudang,teknisi,viewer,department manager'], function () {
         Route::get('/barang/cetak-pdf/{id}', [BarangController::class, 'cetakPdf'])->name('barang.cetak.pdf');
         Route::get('/barang/get-data', [BarangController::class, 'getDataBarang']);
         Route::get('/barang', [BarangController::class, 'index'])->name('barang.index');
@@ -224,8 +227,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('/pju-asset/{pju_asset}', [PjuAssetController::class, 'destroy'])->name('pju-asset.destroy');
     });
 
-    // TRANSAKSI & INVENTORY READ (SUPERADMIN, ADMIN GUDANG, KEPALA GUDANG, VIEWER)
-    Route::group(['middleware' => 'checkRole:superadmin,admin gudang,kepala gudang,viewer'], function () {
+    // TRANSAKSI & INVENTORY READ (SUPERADMIN, ADMIN GUDANG, KEPALA GUDANG, VIEWER, DEPARTMENT MANAGER)
+    Route::group(['middleware' => 'checkRole:superadmin,admin gudang,kepala gudang,viewer,department manager'], function () {
         Route::get('/api/barang-masuk', [BarangMasukController::class, 'getAutoCompleteData']);
         Route::get('/barang-masuk/get-data', [BarangMasukController::class, 'getDataBarangMasuk']);
         Route::get('/api/satuan-masuk', [BarangMasukController::class, 'getSatuan']);
